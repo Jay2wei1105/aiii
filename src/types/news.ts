@@ -10,6 +10,7 @@ export interface NewsItem {
     summary: string;
     fullContent: string;
     source: string;
+    sourceName: string;  // Display name for source (e.g., "CleanTechnica", "能源局")
     date: string;
 }
 

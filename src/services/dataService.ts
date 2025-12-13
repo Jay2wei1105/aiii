@@ -49,7 +49,8 @@ export async function fetchNews() {
             ...item,
             image: finalImageUrl,
             fullContent: item.full_content,
-            tagVariant: item.tag_variant
+            tagVariant: item.tag_variant,
+            sourceName: item.source_name || '未知來源'  // Map source_name to sourceName
         };
     });
 }

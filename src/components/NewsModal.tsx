@@ -71,7 +71,15 @@ export const NewsModal: React.FC<NewsModalProps> = ({ news, onClose }) => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Globe size={16} />
-                                        <span>{news.source}</span>
+                                        <a
+                                            href={news.source}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="hover:text-teal-600 transition-colors underline"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {news.sourceName}
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -102,7 +110,15 @@ export const NewsModal: React.FC<NewsModalProps> = ({ news, onClose }) => {
                             </motion.div>
 
                             <div className="mt-4 flex md:hidden justify-between text-zinc-500 text-sm font-bold uppercase">
-                                <span>{news.source}</span>
+                                <a
+                                    href={news.source}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:text-teal-600 transition-colors underline"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {news.sourceName}
+                                </a>
                                 <span>{news.date}</span>
                             </div>
                         </div>

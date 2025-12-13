@@ -12,7 +12,7 @@ interface NewsCardProps {
 
 export const FeedNewsCard: React.FC<NewsCardProps> = ({ data, onClick }) => {
     const [isHovered, setIsHovered] = useState(false);
-    const { id, image, region, tag, tagVariant, title, summary, source, date } = data;
+    const { id, image, region, tag, tagVariant, title, summary, sourceName, date } = data;
 
     return (
         <motion.div
@@ -90,7 +90,7 @@ export const FeedNewsCard: React.FC<NewsCardProps> = ({ data, onClick }) => {
 
                 {/* 4. Footer */}
                 <div className="pt-4 flex items-center justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-wider shrink-0">
-                    <span>{source}</span>
+                    <span>{sourceName}</span>
                     <span>{date}</span>
                 </div>
             </div>
