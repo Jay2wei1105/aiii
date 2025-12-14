@@ -362,29 +362,53 @@ Deno.serve(async (req) => {
         console.log(`Processing ${itemsToProcess.length} items with URL extraction, scraping, AI analysis and translation...`);
 
         for (const item of itemsToProcess) {
-            // 1. Extract real URL from Google News redirect
-            const googleNewsUrl = item.link;
-            const realUrl = await extractRealUrlFromGoogleNews(googleNewsUrl);
+            // 1. Try to extract content from RSS first
+            let fullContent = item.content || item['content:encoded'] || '';
+            let image = null;
+            let plainText = '';
 
-            if (!realUrl) {
-                console.warn(`Skipping item - could not extract real URL: ${item.title}`);
-                continue;
+            // 2. Extract image from RSS
+            if (item.enclosure?.url) {
+                image = item.enclosure.url;
+            } else if ((item as any)?.['media:thumbnail']?.[0]?.['$']?.url) {
+                image = (item as any)['media:thumbnail'][0]['$'].url;
+            } else if ((item as any)?.['media:content']?.[0]?.['$']?.url) {
+                image = (item as any)['media:content'][0]['$'].url;
             }
 
-            // 2. Scrape the actual article content and images
-            console.log(`Scraping article: ${item.title?.substring(0, 50)}...`);
-            const scrapeResult = await scrapeArticle(realUrl);
-
-            if (!scrapeResult) {
-                console.warn(`Skipping item - scraping failed: ${item.title}`);
-                continue;
-            }
-
-            const { image, content: fullContent, plainText } = scrapeResult;
-
-            // 3. Check content length
+            // 3. If RSS content is insufficient, try URL extraction and scraping
             if (!fullContent || fullContent.length < 300) {
-                console.warn(`Skipping item - content too short (${fullContent?.length || 0} chars): ${item.title}`);
+                console.log(`RSS content insufficient for: ${item.title?.substring(0, 50)}... (${fullContent?.length || 0} chars)`);
+                console.log(`Attempting to extract real URL and scrape...`);
+
+                const googleNewsUrl = item.link;
+                const realUrl = await extractRealUrlFromGoogleNews(googleNewsUrl);
+
+                if (realUrl) {
+                    const scrapeResult = await scrapeArticle(realUrl);
+
+                    if (scrapeResult) {
+                        fullContent = scrapeResult.content;
+                        plainText = scrapeResult.plainText;
+                        if (!image) image = scrapeResult.image; // Use scraped image if no RSS image
+                        console.log(`✓ Scraped content: ${fullContent?.length || 0} chars`);
+                    } else {
+                        console.warn(`Scraping failed, skipping item`);
+                        continue;
+                    }
+                } else {
+                    console.warn(`Could not extract real URL, skipping item`);
+                    continue;
+                }
+            } else {
+                // RSS content is sufficient
+                console.log(`Using RSS content: ${fullContent?.length || 0} chars`);
+                plainText = fullContent.replace(/\<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 3000);
+            }
+
+            // 4. Final content check
+            if (!fullContent || fullContent.length < 200) {
+                console.warn(`Skipping item - final content too short (${fullContent?.length || 0} chars): ${item.title}`);
                 continue;
             }
 
@@ -551,14 +575,14 @@ JSON 格式：
 
             newNewsEntries.push({
                 title: isEnglish ? analysis.translatedTitle : item.title,  // Use translated title for English news
-                source: realUrl,  // Use real news site URL, not Google News URL
-                source_name: extractSourceName(realUrl, (item as any).sourceName),
+                source: item.link,  // Use original link (Google News or direct URL)
+                source_name: extractSourceName(item.link, (item as any).sourceName),
                 date: new Date(item.pubDate || item.isoDate || Date.now()).toISOString(),
                 summary: analysis.summary,
                 region: analysis.region,
                 tag: analysis.tag,
                 tag_variant: analysis.tag_variant,
-                full_content: translatedContent || item.contentSnippet || '',  // Use translated content
+                full_content: translatedContent || fullContent || '',  // Use translated content or original
                 image: image
             });
         }
