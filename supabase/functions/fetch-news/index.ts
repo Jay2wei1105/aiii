@@ -11,6 +11,49 @@ const corsHeaders = {
 }
 
 /**
+ * Extract real news URL from Google News RSS link
+ * Google News RSS items have format: https://news.google.com/rss/articles/...
+ * We need to follow the redirect to get the actual news site URL
+ */
+async function extractRealUrlFromGoogleNews(googleNewsUrl: string): Promise<string | null> {
+    try {
+        console.log(`Extracting real URL from: ${googleNewsUrl.substring(0, 80)}...`);
+
+        // Follow redirect to get real URL
+        const res = await fetch(googleNewsUrl, {
+            method: 'HEAD',  // Only need headers, not content
+            redirect: 'manual',  // Don't follow redirect automatically
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+            }
+        });
+
+        // Get Location header which contains the real URL
+        const location = res.headers.get('location');
+        if (location) {
+            console.log(`✓ Real URL found: ${location.substring(0, 80)}...`);
+            return location;
+        }
+
+        // Fallback: try to extract from URL parameter
+        try {
+            const url = new URL(googleNewsUrl);
+            const urlParam = url.searchParams.get('url');
+            if (urlParam) {
+                console.log(`✓ Real URL from param: ${urlParam.substring(0, 80)}...`);
+                return urlParam;
+            }
+        } catch { }
+
+        console.warn(`Could not extract real URL from: ${googleNewsUrl}`);
+        return null;
+    } catch (e) {
+        console.error(`Error extracting real URL:`, e);
+        return null;
+    }
+}
+
+/**
  * Helper: Scraping specific news sites
  * Extracts Main Image and Readable Content
  */
@@ -208,34 +251,38 @@ Deno.serve(async (req) => {
             throw new Error(`RSS Parse Failed: ${e.message}`);
         }
 
-        // Filter by Keywords (Renewable Energy & Energy Saving related)
-        const keywords = {
-            renewable: ['再生能源', '綠能', '綠電', '太陽能', '光電', '風力', '風電', '離岸風電', '陸域風電', '地熱', '水力', '氫能', '潮汐能',
-                'renewable', 'solar', 'photovoltaic', 'pv', 'wind', 'offshore wind', 'onshore wind', 'geothermal', 'hydro', 'hydrogen', 'tidal'],
-            energySaving: ['節能', '能源效率', '能效', 'ESG', '碳排', '減碳', '淨零', '碳中和', '儲能', '電池', '電動車', 'BESS',
-                'energy efficiency', 'energy saving', 'carbon', 'emissions', 'net zero', 'carbon neutral', 'storage', 'battery', 'ev', 'electric vehicle', 'bess'],
-            general: ['能源', '永續', '氣候', '環保', 'energy', 'sustainable', 'sustainability', 'climate', 'green']
-        };
+        // Filter by Keywords (TEMPORARILY DISABLED FOR DEBUGGING)
+        // const keywords = {
+        //     renewable: ['再生能源', '綠能', '綠電', '太陽能', '光電', '風力', '風電', '離岸風電', '陸域風電', '地熱', '水力', '氫能', '潮汐能',
+        //         'renewable', 'solar', 'photovoltaic', 'pv', 'wind', 'offshore wind', 'onshore wind', 'geothermal', 'hydro', 'hydrogen', 'tidal'],
+        //     energySaving: ['節能', '能源效率', '能效', 'ESG', '碳排', '減碳', '淨零', '碳中和', '儲能', '電池', '電動車', 'BESS',
+        //         'energy efficiency', 'energy saving', 'carbon', 'emissions', 'net zero', 'carbon neutral', 'storage', 'battery', 'ev', 'electric vehicle', 'bess'],
+        //     general: ['能源', '永續', '氣候', '環保', 'energy', 'sustainable', 'sustainability', 'climate', 'green']
+        // };
 
-        const allKeywords = [...keywords.renewable, ...keywords.energySaving, ...keywords.general];
+        // const allKeywords = [...keywords.renewable, ...keywords.energySaving, ...keywords.general];
 
-        const keywordFilteredItems = allItems.filter(item => {
-            const title = (item.title || '').toLowerCase();
-            const description = (item.contentSnippet || '').toLowerCase();
-            const searchText = title + ' ' + description;
+        // const keywordFilteredItems = allItems.filter(item => {
+        //     const title = (item.title || '').toLowerCase();
+        //     const description = (item.contentSnippet || '').toLowerCase();
+        //     const searchText = title + ' ' + description;
 
-            // Check if any keyword exists in title or description
-            return allKeywords.some(keyword => searchText.includes(keyword.toLowerCase()));
-        });
+        //     // Check if any keyword exists in title or description
+        //     return allKeywords.some(keyword => searchText.includes(keyword.toLowerCase()));
+        // });
 
-        console.log(`Items after keyword filter: ${keywordFilteredItems.length} (filtered out ${allItems.length - keywordFilteredItems.length} irrelevant items)`);
+        const keywordFilteredItems = allItems; // Skip keyword filter for debugging
 
-        // Filter by Date (>= 2025-12-01)
-        const startDate = new Date('2025-12-01T00:00:00+08:00');
-        const dateFilteredItems = keywordFilteredItems.filter(item => {
-            const pubDate = new Date(item.pubDate);
-            return pubDate >= startDate;
-        });
+        console.log(`Items after keyword filter: ${keywordFilteredItems.length} (keyword filter DISABLED for debugging)`);
+
+        // Filter by Date (skip for now to test everything)
+        // const startDate = new Date('2025-12-01T00:00:00+08:00');
+        // const dateFilteredItems = keywordFilteredItems.filter(item => {
+        //     const pubDate = new Date(item.pubDate);
+        //     return pubDate >= startDate;
+        // });
+
+        const dateFilteredItems = keywordFilteredItems; // Use all keyword-filtered items
 
         console.log(`Items after date filter: ${dateFilteredItems.length}`);
 
@@ -307,68 +354,39 @@ Deno.serve(async (req) => {
             return new Response(JSON.stringify({ message: 'No new unique items to process.' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
         }
 
-        // Process items (professional RSS feeds usually have full content, no scraping needed!)
-        // Batch size of 20 to stay within Edge Function resource limits (translation is AI-intensive)
-        const itemsToProcess = uniqueItems.slice(0, 20);
+        // Process items (Google News + web scraping is resource-intensive)
+        // Batch size of 5 to stay within Edge Function resource limits
+        const itemsToProcess = uniqueItems.slice(0, 5);
         const newNewsEntries = [];
 
-        console.log(`Processing ${itemsToProcess.length} items with AI analysis and translation...`);
+        console.log(`Processing ${itemsToProcess.length} items with URL extraction, scraping, AI analysis and translation...`);
 
         for (const item of itemsToProcess) {
-            // 1. Extract content directly from RSS (most professional feeds include full HTML)
-            let fullContent = item.content || item['content:encoded'] || item.contentSnippet || '';
+            // 1. Extract real URL from Google News redirect
+            const googleNewsUrl = item.link;
+            const realUrl = await extractRealUrlFromGoogleNews(googleNewsUrl);
 
-            // 2. Extract image with multiple fallback strategies
-            let image = null;
-
-            // Strategy 1: RSS enclosure (media:thumbnail, enclosure)
-            if (item.enclosure?.url) {
-                image = item.enclosure.url;
-            } else if ((item as any)?.['media:thumbnail']?.[0]?.['$']?.url) {
-                image = (item as any)['media:thumbnail'][0]['$'].url;
-            } else if ((item as any)?.['media:content']?.[0]?.['$']?.url) {
-                image = (item as any)['media:content'][0]['$'].url;
+            if (!realUrl) {
+                console.warn(`Skipping item - could not extract real URL: ${item.title}`);
+                continue;
             }
 
-            // Strategy 2: Extract from HTML content
-            if (!image && item.content) {
-                const imgMatch = item.content.match(/<img[^>]+src=["']([^"']+)["']/i);
-                if (imgMatch && imgMatch[1]) {
-                    image = imgMatch[1];
-                }
+            // 2. Scrape the actual article content and images
+            console.log(`Scraping article: ${item.title?.substring(0, 50)}...`);
+            const scrapeResult = await scrapeArticle(realUrl);
+
+            if (!scrapeResult) {
+                console.warn(`Skipping item - scraping failed: ${item.title}`);
+                continue;
             }
 
-            // Strategy 3: Lightweight fetch of og:image from article URL (only if image still not found)
-            if (!image && item.link) {
-                try {
-                    console.log(`  Fetching og:image from ${item.link}`);
-                    const pageRes = await fetch(item.link, {
-                        headers: { 'User-Agent': 'Mozilla/5.0' },
-                        signal: AbortSignal.timeout(5000) // 5s timeout
-                    });
+            const { image, content: fullContent, plainText } = scrapeResult;
 
-                    if (pageRes.ok) {
-                        const html = await pageRes.text();
-                        // Extract og:image using regex (faster than cheerio for just one meta tag)
-                        const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
-                            html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-                        if (ogImageMatch && ogImageMatch[1]) {
-                            image = ogImageMatch[1];
-                            console.log(`  ✓ Found og:image: ${image.substring(0, 50)}...`);
-                        }
-                    }
-                } catch (fetchError) {
-                    console.log(`  ✗ Could not fetch og:image: ${fetchError.message}`);
-                    // Continue without image
-                }
+            // 3. Check content length
+            if (!fullContent || fullContent.length < 300) {
+                console.warn(`Skipping item - content too short (${fullContent?.length || 0} chars): ${item.title}`);
+                continue;
             }
-
-            // 3. Get plain text for AI (from content or description)
-            const plainText = (fullContent || item.contentSnippet || item.title)
-                .replace(/<[^>]*>/g, '') // Remove HTML tags
-                .replace(/\s+/g, ' ')
-                .trim()
-                .substring(0, 2000);
 
             // 4. AI Analysis (with translation for English sources)
             const isEnglish = (item as any).sourceLanguage === 'en';
@@ -533,8 +551,8 @@ JSON 格式：
 
             newNewsEntries.push({
                 title: isEnglish ? analysis.translatedTitle : item.title,  // Use translated title for English news
-                source: item.link,
-                source_name: extractSourceName(item.link, (item as any).sourceName),
+                source: realUrl,  // Use real news site URL, not Google News URL
+                source_name: extractSourceName(realUrl, (item as any).sourceName),
                 date: new Date(item.pubDate || item.isoDate || Date.now()).toISOString(),
                 summary: analysis.summary,
                 region: analysis.region,
