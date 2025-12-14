@@ -1,7 +1,7 @@
 "use client";
 
 import { PortfolioTemplate } from "@/data/portfolioData";
-import { X, Check, ExternalLink, Download } from "lucide-react";
+import { X, Check, ExternalLink } from "lucide-react";
 import { useEffect } from "react";
 
 interface PortfolioModalProps {
@@ -112,15 +112,16 @@ export function PortfolioModal({ template, onClose }: PortfolioModalProps) {
 
                         {/* Action Buttons */}
                         <div className="space-y-3">
-                            <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-6 py-4 font-semibold text-zinc-900 transition-all hover:bg-zinc-100">
-                                <Download className="h-5 w-5" />
-                                {template.price === "Free" ? "Get it for free" : `Get it for ${template.price}`}
-                            </button>
                             {template.livePreviewUrl && (
-                                <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-4 font-semibold text-white transition-all hover:bg-white/10">
+                                <a
+                                    href={template.livePreviewUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/20 px-6 py-4 font-semibold text-white transition-all hover:bg-white/10"
+                                >
                                     <ExternalLink className="h-5 w-5" />
-                                    Live preview
-                                </button>
+                                    Preview
+                                </a>
                             )}
                         </div>
                     </div>

@@ -24,10 +24,6 @@ export default function ProjectsPage() {
                 <div className="px-6 py-8 pt-28">
                     <div className="max-w-7xl mx-auto">
                         <div className="mb-12">
-                            <h1 className="text-4xl font-bold mb-4">Skills Templates</h1>
-                            <p className="text-lg text-zinc-600">
-                                Skills templates to showcase your work beautifully
-                            </p>
                         </div>
 
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

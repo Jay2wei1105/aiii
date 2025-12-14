@@ -23,7 +23,7 @@ export function PortfolioCard({ template, onClick }: PortfolioCardProps) {
     return (
         <article
             onClick={onClick}
-            className="group cursor-pointer space-y-4 transition-all duration-300 hover:-translate-y-2"
+            className="group cursor-pointer space-y-4 transition-all duration-300 hover:-translate-y-2 h-full flex flex-col"
         >
             {/* Preview Image */}
             <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-900 shadow-lg">
@@ -48,8 +48,8 @@ export function PortfolioCard({ template, onClick }: PortfolioCardProps) {
                         {template.title}
                     </h3>
                     <span className={`text-sm font-medium ${template.price === "Free"
-                            ? "text-green-600"
-                            : "text-zinc-900"
+                        ? "text-green-600"
+                        : "text-zinc-900"
                         }`}>
                         {template.price}
                     </span>

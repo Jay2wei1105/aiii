@@ -29,7 +29,7 @@ export default function TemplateCard({ template, isSelected, onSelect }: Templat
                 onClick={() => onSelect(template)}
                 className={`
           relative flex flex-col items-center justify-between
-          w-full h-36 rounded-xl p-4
+          w-full min-h-[9rem] h-full rounded-xl p-4
           transition-all duration-200
           ${isSelected
                         ? 'bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-500 shadow-lg shadow-emerald-500/20'
@@ -72,11 +72,19 @@ export default function TemplateCard({ template, isSelected, onSelect }: Templat
                 </h3>
 
                 {/* Preview Button */}
-                <button
+                <div
+                    role="button"
+                    tabIndex={0}
                     onClick={handlePreviewClick}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handlePreviewClick(e as any);
+                        }
+                    }}
                     className={`
-            w-full py-1 px-2 text-xs font-medium rounded
-            transition-all duration-150
+            w-full min-w-[4em] py-1 px-2 text-xs font-medium rounded cursor-pointer
+            transition-all duration-150 whitespace-nowrap
             ${isSelected
                             ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                             : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
@@ -85,7 +93,7 @@ export default function TemplateCard({ template, isSelected, onSelect }: Templat
                 >
                     <Icons.Eye className="w-3 h-3 inline mr-1" />
                     預覽
-                </button>
+                </div>
 
                 {/* Selected Indicator */}
                 {isSelected && (

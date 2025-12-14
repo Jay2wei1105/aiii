@@ -26,13 +26,13 @@ export default function ReportInputPanel({
     isGenerating,
 }: ReportInputPanelProps) {
     const charCount = inputText.length;
-    const minChars = 50;
+    const minChars = 10; // Relaxed from 50
 
-    // Count template fields
+    // Count template fields (Optional, just for display)
     const fieldMatches = template.matchAll(/\{\{([^}]+)\}\}/g);
     const fieldCount = Array.from(fieldMatches).length;
 
-    const isValid = charCount >= minChars && fieldCount > 0;
+    const isValid = charCount >= minChars && template.trim().length > 0;
 
     return (
         <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700">
@@ -54,7 +54,7 @@ export default function ReportInputPanel({
             </div>
 
             {/* Input Areas */}
-            <div className="flex-1 p-6 flex flex-col gap-6 overflow-auto">
+            <div className="flex-1 p-6 flex flex-col gap-6">
                 {/* Section 1 - Inspection Record */}
                 <div className="flex flex-col">
                     <div className="flex items-center gap-2 mb-3">
@@ -93,13 +93,8 @@ export default function ReportInputPanel({
                     {fieldCount > 0 && (
                         <div className="mt-3 flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
                             <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-                            已識別 {fieldCount} 個模板欄位
+                            已識別 {fieldCount} 個動態填變數
                         </div>
-                    )}
-                    {fieldCount === 0 && template.length > 0 && (
-                        <p className="mt-3 text-xs text-amber-600 dark:text-amber-500">
-                            ⚠️ 模板中未找到欄位標記，請確保使用 {'{{欄位名稱}}'} 格式
-                        </p>
                     )}
                 </div>
             </div>
@@ -111,17 +106,9 @@ export default function ReportInputPanel({
                     disabled={!isValid || isGenerating}
                     className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-400 disabled:to-slate-400 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-3 text-lg"
                 >
-                    {isGenerating ? (
-                        <>
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                            AI 正在生成報告中...
-                        </>
-                    ) : (
-                        <>
-                            <FileText className="w-5 h-5" />
-                            生成專業報告
-                        </>
-                    )}
+                    {isGenerating && <Loader2 className="w-5 h-5 animate-spin" />}
+                    {!isGenerating && <FileText className="w-5 h-5" />}
+                    <span>{isGenerating ? 'AI 正在生成報告中...' : '生成報告'}</span>
                 </button>
             </div>
         </div>

@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { DateRange, NewsItem } from '@/types/news';
 import { fetchNews } from '@/services/dataService';
 import { FilterBar } from '@/components/FilterBar';
-import { FeedNewsCard } from '@/components/FeedNewsCard';
+import { FeedNewsCard_2 } from '@/components/FeedNewsCard_2';
 import { EmptyState } from '@/components/EmptyState';
 import { NewsModal } from '@/components/NewsModal';
 import Navbar from '@/components/nav_delta';
@@ -24,6 +24,10 @@ export default function NewsFeed() {
     const [selectedTags, setSelectedTags] = useState(["All"]);
     const [dateRange, setDateRange] = useState<DateRange>({ start: "", end: "" });
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     useEffect(() => {
         if (selectedId) {
             document.body.style.overflow = 'hidden';
@@ -31,6 +35,11 @@ export default function NewsFeed() {
             document.body.style.overflow = 'unset';
         }
     }, [selectedId]);
+
+    // Reset pagination when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, selectedTags, dateRange]);
 
     // Extract all unique tags
     const allTags = useMemo(() => ["All", ...new Set(news.map(d => d.tag))], [news]);
@@ -75,6 +84,19 @@ export default function NewsFeed() {
         });
     }, [searchQuery, selectedTags, dateRange, news]);
 
+    // Pagination Logic
+    const paginatedNews = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredNews.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredNews, currentPage]);
+
+    const totalPages = Math.ceil(filteredNews.length / itemsPerPage);
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const selectedNews = news.find(n => n.id === selectedId) || null;
 
     const clearFilters = () => {
@@ -101,17 +123,54 @@ export default function NewsFeed() {
                     />
 
                     {filteredNews.length > 0 ? (
-                        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <AnimatePresence mode='popLayout'>
-                                {filteredNews.map((news) => (
-                                    <FeedNewsCard
-                                        key={news.id}
-                                        data={news}
-                                        onClick={() => setSelectedId(news.id)}
-                                    />
-                                ))}
-                            </AnimatePresence>
-                        </div>
+                        <>
+                            <div className="max-w-5xl mx-auto flex flex-col gap-6 mb-8">
+                                <AnimatePresence mode='popLayout'>
+                                    {paginatedNews.map((news) => (
+                                        <FeedNewsCard_2
+                                            key={news.id}
+                                            data={news}
+                                        />
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center gap-2 pb-8">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="px-4 py-2 rounded-lg border border-zinc-200 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Previous
+                                    </button>
+
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                            <button
+                                                key={page}
+                                                onClick={() => handlePageChange(page)}
+                                                className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${currentPage === page
+                                                        ? 'bg-zinc-900 text-white'
+                                                        : 'text-zinc-600 hover:bg-zinc-100'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="px-4 py-2 rounded-lg border border-zinc-200 text-sm font-medium hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <EmptyState onClearFilters={clearFilters} />
                     )}

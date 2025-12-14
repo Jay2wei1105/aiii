@@ -54,42 +54,48 @@ export default function TemplateSelector({
                 )}
             </div>
 
-            {/* Template Cards Grid */}
+            {/* Template Cards Horizontal Scroll */}
             {!isCustomMode && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600 -mx-1 px-1">
                     {reportTemplates.map((template) => (
-                        <TemplateCard
+                        <div
                             key={template.id}
-                            template={template}
-                            isSelected={selectedTemplateId === template.id}
-                            onSelect={handleSelectTemplate}
-                        />
+                            className="flex-none w-[85%] md:w-[45%] lg:w-[calc(25%-0.75rem)] snap-start"
+                        >
+                            <TemplateCard
+                                template={template}
+                                isSelected={selectedTemplateId === template.id}
+                                onSelect={handleSelectTemplate}
+                            />
+                        </div>
                     ))}
 
                     {/* Custom Template Card */}
-                    <button
-                        onClick={handleCustomMode}
-                        className={`
-              relative flex flex-col items-center justify-center
-              w-full h-36 rounded-xl p-4
-              transition-all duration-200
-              bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30
-              border-2 border-dashed border-purple-300 dark:border-purple-700
-              hover:border-purple-500 dark:hover:border-purple-500
-              hover:scale-105 hover:shadow-xl
-              focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
-            `}
-                    >
-                        <div className="mb-2 p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
-                            <Edit3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <h3 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
-                            自訂模板
-                        </h3>
-                        <p className="text-xs text-center text-purple-700 dark:text-purple-300">
-                            進階用戶自訂
-                        </p>
-                    </button>
+                    <div className="flex-none w-[85%] md:w-[45%] lg:w-[calc(25%-0.75rem)] snap-start">
+                        <button
+                            onClick={handleCustomMode}
+                            className={`
+                  relative flex flex-col items-center justify-center
+                  w-full h-full min-h-[9rem] rounded-xl p-4
+                  transition-all duration-200
+                  bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30
+                  border-2 border-dashed border-purple-300 dark:border-purple-700
+                  hover:border-purple-500 dark:hover:border-purple-500
+                  hover:scale-105 hover:shadow-xl
+                  focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
+                `}
+                        >
+                            <div className="mb-2 p-2 rounded-lg bg-purple-100 dark:bg-purple-900/50">
+                                <Edit3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <h3 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                                自訂模板
+                            </h3>
+                            <p className="text-xs text-center text-purple-700 dark:text-purple-300">
+                                進階用戶自訂
+                            </p>
+                        </button>
+                    </div>
                 </div>
             )}
 

@@ -2,14 +2,16 @@
 
 import { Download, Copy, CheckCircle, FileDown } from 'lucide-react';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-interface GeneratedField {
-    label: string;
+interface GeneratedSection {
+    name: string;
     content: string;
 }
 
 interface ReportOutputPanelProps {
-    generatedContent: GeneratedField[] | null;
+    generatedContent: GeneratedSection[] | null;
     template: string;
     onDownload: () => void;
     isDownloading: boolean;
@@ -23,19 +25,13 @@ export default function ReportOutputPanel({
 }: ReportOutputPanelProps) {
     const [copied, setCopied] = useState(false);
 
-    // Generate the final report by replacing {{fields}} in template
+    // Generate the final report from sections
     const generateFinalReport = (): string => {
-        if (!generatedContent || !template) return '';
+        if (!generatedContent) return '';
 
-        let finalReport = template;
-
-        // Replace each {{field}} with its generated content
-        generatedContent.forEach(field => {
-            const placeholder = `{{${field.label}}}`;
-            finalReport = finalReport.replace(placeholder, field.content);
-        });
-
-        return finalReport;
+        return generatedContent
+            .map(section => `${section.name}\n\n${section.content}`)
+            .join('\n\n---\n\n');
     };
 
     const finalReport = generateFinalReport();
@@ -47,7 +43,7 @@ export default function ReportOutputPanel({
     };
 
     return (
-        <div className="h-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700">
+        <div className="w-full h-fit flex flex-col bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 max-h-[calc(100vh-120px)]">
             {/* Header */}
             <div className="px-8 py-6 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
@@ -60,7 +56,7 @@ export default function ReportOutputPanel({
                                 報告預覽
                             </h2>
                             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                                完整報告內容（已填入 AI 生成內容）
+                                AI 智慧生成
                             </p>
                         </div>
                     </div>
@@ -97,7 +93,7 @@ export default function ReportOutputPanel({
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 p-8 overflow-y-auto">
+            <div className="flex-1 p-8 overflow-y-auto max-h-[800px]">
                 {!generatedContent ? (
                     /* Empty State */
                     <div className="h-full flex items-center justify-center">
@@ -109,18 +105,44 @@ export default function ReportOutputPanel({
                                 尚未生成報告
                             </h3>
                             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                請在左側輸入現勘紀錄和報告模板，然後點擊「生成專業報告」按鈕，
-                                AI 將自動填入模板中的欄位內容。
+                                請在左側輸入現勘紀錄，選擇報告模板，然後點擊「生成專業報告」按鈕，
+                                AI 將根據結構要求自動生成完整內容。
                             </p>
                         </div>
                     </div>
                 ) : (
-                    /* Full Template with Replaced Content */
+                    /* Section-based Report Display */
                     <div className="bg-white dark:bg-slate-950 rounded-xl p-8 shadow-md border border-slate-200 dark:border-slate-700">
-                        <div className="prose prose-slate dark:prose-invert max-w-none">
-                            <div className="text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap font-['system-ui'] text-base">
-                                {finalReport}
-                            </div>
+                        <div className="space-y-8">
+                            {generatedContent.map((section, index) => (
+                                <div key={index} className="border-b border-slate-200 dark:border-slate-700 pb-8 last:border-0 last:pb-0">
+                                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+                                        {section.name}
+                                    </h3>
+                                    <div className="prose prose-slate dark:prose-invert max-w-none">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                h1: ({ node, ...props }) => <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-6 mb-4" {...props} />,
+                                                h2: ({ node, ...props }) => <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mt-5 mb-3" {...props} />,
+                                                h3: ({ node, ...props }) => <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mt-4 mb-2" {...props} />,
+                                                p: ({ node, ...props }) => <p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4" {...props} />,
+                                                ul: ({ node, ...props }) => <ul className="list-disc list-outside ml-6 mb-4 text-slate-700 dark:text-slate-300" {...props} />,
+                                                ol: ({ node, ...props }) => <ol className="list-decimal list-outside ml-6 mb-4 text-slate-700 dark:text-slate-300" {...props} />,
+                                                li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                                                strong: ({ node, ...props }) => <strong className="font-bold text-slate-900 dark:text-slate-100" {...props} />,
+                                                blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-slate-300 dark:border-slate-600 pl-4 italic text-slate-600 dark:text-slate-400 mb-4" {...props} />,
+                                                table: ({ node, ...props }) => <div className="overflow-x-auto mb-6 rounded-lg border border-slate-200 dark:border-slate-700"><table className="w-full text-sm text-left text-slate-600 dark:text-slate-300" {...props} /></div>,
+                                                thead: ({ node, ...props }) => <thead className="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-800 dark:text-slate-200" {...props} />,
+                                                th: ({ node, ...props }) => <th className="px-6 py-3 font-bold border-b border-slate-200 dark:border-slate-700" {...props} />,
+                                                td: ({ node, ...props }) => <td className="px-6 py-4 border-b border-slate-100 dark:border-slate-800" {...props} />,
+                                            }}
+                                        >
+                                            {section.content}
+                                        </ReactMarkdown>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

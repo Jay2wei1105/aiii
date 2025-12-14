@@ -40,7 +40,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
     };
 
     return (
-        <div className="max-w-7xl mx-auto mb-10 space-y-4">
+        <div className="max-w-5xl mx-auto mb-10 space-y-4">
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-zinc-200 flex flex-col lg:flex-row gap-4 lg:items-center">
 
                 {/* 1. Search Input */}

@@ -23,7 +23,6 @@ export default function NewsPage() {
                 <div className="px-6 py-6 pt-28">
                     <div className="max-w-7xl mx-auto">
                         <div className="mb-12">
-                            <h1 className="text-4xl font-bold mb-4">Prompt 資料庫</h1>
                             <p className="text-lg text-slate-400">
                                 複製Prompt模板，填入客製化參數，高效產生內容。
                             </p>

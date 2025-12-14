@@ -75,8 +75,9 @@ export default function NavbarDelta() {
         { name: '最新消息', href: '/news-feed' },
         { name: '提示庫', href: '/prompt' },
         { name: '數據分析工具', href: '/chart' },
+        { name: '報告生成器', href: '/report-generator' },
         { name: 'AI工具', href: '/aitools' },
-        { name: '技能樹', href: '/skills' },
+        { name: '知識庫', href: '/skills' },
     ];
 
     return (
