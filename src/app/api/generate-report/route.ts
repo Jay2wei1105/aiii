@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
 ### 2. 內容品質要求
 ### 2. 內容品質要求
-- **節能方案**務必依照「現況問題」、「改善對策」、「效益試算」分段詳細論述。
+- **節能方案**務必依照「現況問題」、「改善對策」、「效益試算」分段詳細論述，內容要豐富完整。
 - **綜合效益分析** (Section 5) 必須使用 **Markdown 表格** 呈現，包含欄位：方案名稱、投資額、年效益、回收年限。
 - 語氣必須專業、肯定，避免模稜兩可。
 
@@ -83,7 +83,7 @@ ${template}
 
         // Call OpenAI API
         const completion = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'gpt-5-mini',
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: userPrompt },
