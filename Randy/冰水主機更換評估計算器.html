@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>冰水主機更換效益評估計算器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --color-primary: #2180a0;
+            --color-primary-hover: #1a6680;
+            --color-success: #22c55e;
+            --color-error: #ef4444;
+            --color-warning: #f59e0b;
+            --color-bg: #f8fafc;
+            --color-surface: #ffffff;
+            --color-border: #e2e8f0;
+            --color-text: #1e293b;
+            --color-text-light: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, #1a6680 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--color-primary);
+            border-bottom: 2px solid var(--color-primary);
+            padding-bottom: 10px;
+        }
+
+        .card h3 {
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 12px;
+            color: var(--color-text);
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--color-text);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(33, 128, 160, 0.1);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .chiller-block {
+            background: #f0f9ff;
+            border: 1px solid #cce5ff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            padding-right: 45px;
+        }
+
+        .chiller-block h4 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .btn-remove {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--color-error);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-remove:hover {
+            background: #dc2626;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(33, 128, 160, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--color-border);
+            color: var(--color-text);
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .btn-success {
+            background: var(--color-success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid var(--color-success);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card.error {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-color: var(--color-error);
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: var(--color-text-light);
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: var(--color-primary);
+            font-size: 16px;
+        }
+
+        .result-value.highlight {
+            color: var(--color-success);
+            font-size: 20px;
+        }
+
+        .chart-container {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--color-primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--color-text-light);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .stat-unit {
+            font-size: 12px;
+            color: var(--color-text-light);
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--color-border);
+            margin: 20px 0;
+        }
+
+        .warning-banner {
+            background: #fef3c7;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #92400e;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--color-text-light);
+        }
+
+        .empty-state p {
+            margin-bottom: 20px;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .card {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>❄️ 冰水主機更換效益評估計算器</h1>
+            <p>快速評估冰水主機更換投資回收年限與節能效益</p>
+        </header>
+
+        <div class="layout">
+            <!-- 左側：輸入表單 -->
+            <div>
+                <div class="card">
+                    <h2>🔧 系統參數設定</h2>
+
+                    <h3>共同運轉參數</h3>
+                    <div class="form-group">
+                        <label for="electricityPrice">電費單價 (元/kWh)</label>
+                        <input type="number" id="electricityPrice" value="3.95" min="0.1" step="0.01">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="engineeringCost">預估工程費用 (元/RT)</label>
+                        <input type="number" id="engineeringCost" value="10000" min="0" step="500">
+                    </div>
+
+                    <div class="divider"></div>
+                    <h3>運轉時數設定</h3>
+                    <div style="background: #f0f9ff; border: 1px solid #cce5ff; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+                        <label style="display: flex; align-items: center; margin-bottom: 12px; cursor: pointer;">
+                            <input type="checkbox" id="useCommonHours" checked style="width: auto; margin-right: 8px;">
+                            <span style="font-size: 13px; font-weight: 500;">所有冰機使用相同運轉時數</span>
+                        </label>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="annualHours">全年運轉時數 (小時)</label>
+                            <input type="number" id="annualHours" value="7000" min="1" step="100" onchange="updateCommonHours()">
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+                    <h3>現有冰機資訊</h3>
+
+                    <div id="chillersList"></div>
+
+                    <button class="btn btn-success" onclick="addChiller()">+ 新增冰機</button>
+                    <button class="btn btn-secondary" onclick="clearAllChillers()">清除全部</button>
+
+                    <div class="divider"></div>
+                    <h3>改善方案設定</h3>
+
+                    <div id="newEfficienciesList"></div>
+
+                    <button class="btn btn-primary btn-full" onclick="calculate()">📊 計算效益</button>
+                </div>
+            </div>
+
+            <!-- 右側：結果顯示 -->
+            <div>
+                <div id="resultsContainer"></div>
+            </div>
+        </div>
+
+        <!-- 圖表區域 -->
+        <div id="chartsContainer"></div>
+
+        <!-- 導出按鈕 -->
+        <div style="text-align: center; margin-bottom: 30px;" id="exportButtons"></div>
+    </div>
+
+    <script>
+        let chillers = [];
+        let lastCalculationResults = null;
+
+        function addChiller() {
+            const id = Date.now();
+            const commonHours = parseFloat(document.getElementById('annualHours').value);
+            const chiller = {
+                id: id,
+                name: `冰機 #${chillers.length + 1}`,
+                tons: 100,
+                currentEfficiency: 0.78,
+                operatingHours: commonHours,
+                loadFactor: 60,
+                newEfficiency: 0.576
+            };
+            chillers.push(chiller);
+            renderChillers();
+        }
+
+        function updateCommonHours() {
+            const useCommon = document.getElementById('useCommonHours').checked;
+            const commonHours = parseFloat(document.getElementById('annualHours').value);
+            
+            if (useCommon) {
+                chillers.forEach(chiller => {
+                    chiller.operatingHours = commonHours;
+                });
+                renderChillers();
+            }
+        }
+
+        function removeChiller(id) {
+            chillers = chillers.filter(c => c.id !== id);
+            renderChillers();
+        }
+
+        function clearAllChillers() {
+            if (chillers.length === 0) {
+                alert('沒有冰機可清除');
+                return;
+            }
+            if (confirm('確定要清除所有冰機嗎？')) {
+                chillers = [];
+                renderChillers();
+                document.getElementById('resultsContainer').innerHTML = '';
+                document.getElementById('chartsContainer').innerHTML = '';
+                document.getElementById('exportButtons').innerHTML = '';
+            }
+        }
+
+        function renderChillers() {
+            const container = document.getElementById('chillersList');
+            if (chillers.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8; font-size: 13px;">還沒有新增任何冰機</p>';
+                return;
+            }
+
+            container.innerHTML = chillers.map((chiller, index) => `
+                <div class="chiller-block">
+                    <h4>${chiller.name}</h4>
+                    <button class="btn-remove" onclick="removeChiller(${chiller.id})">移除</button>
+                    
+                    <div class="input-row">
+                        <div class="form-group">
+                            <label>冷凍噸數 (RT)</label>
+                            <input type="number" value="${chiller.tons}" min="1" step="10" 
+                                   onchange="updateChiller(${chiller.id}, 'tons', this.value)">
+                        </div>
+                        <div class="form-group">
+                            <label>現況效率 (kW/RT)</label>
+                            <input type="number" value="${chiller.currentEfficiency}" min="0.1" step="0.01" 
+                                   onchange="updateChiller(${chiller.id}, 'currentEfficiency', this.value)">
+                        </div>
+                    </div>
+
+                    <div class="input-row">
+                        <div class="form-group">
+                            <label>年運轉時數 (小時)
+                                <span style="font-size: 11px; color: #94a3b8; font-weight: normal;">
+                                    ${document.getElementById('useCommonHours').checked ? '(已鎖定使用共同時數)' : '(自訂)'}
+                                </span>
+                            </label>
+                            <input type="number" value="${chiller.operatingHours}" min="1" step="100" 
+                                   ${document.getElementById('useCommonHours').checked ? 'disabled' : ''}
+                                   onchange="updateChiller(${chiller.id}, 'operatingHours', this.value); if(!document.getElementById('useCommonHours').checked) {}">
+                        </div>
+                        <div class="form-group">
+                            <label>平均負載率 (%)</label>
+                            <input type="number" value="${chiller.loadFactor}" min="0" max="100" step="1" 
+                                   onchange="updateChiller(${chiller.id}, 'loadFactor', this.value)">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            renderNewEfficiencies();
+        }
+
+        function updateChiller(id, field, value) {
+            const chiller = chillers.find(c => c.id === id);
+            if (chiller) {
+                chiller[field] = parseFloat(value);
+            }
+        }
+
+        function renderNewEfficiencies() {
+            const container = document.getElementById('newEfficienciesList');
+            if (chillers.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = '<p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">各冰機改善後效率</p>' + chillers.map(chiller => `
+                <div class="form-group">
+                    <label>冰機 #${chillers.indexOf(chillers.find(c => c.id === chiller.id)) + 1} 改善後效率 (kW/RT)</label>
+                    <input type="number" value="${chiller.newEfficiency}" min="0.1" step="0.01" 
+                           onchange="updateChiller(${chiller.id}, 'newEfficiency', this.value)">
+                </div>
+            `).join('');
+        }
+
+        function calculate() {
+            if (chillers.length === 0) {
+                alert('請先新增至少一台冰機');
+                return;
+            }
+
+            const useCommonHours = document.getElementById('useCommonHours').checked;
+            const annualHours = parseFloat(document.getElementById('annualHours').value);
+            const electricityPrice = parseFloat(document.getElementById('electricityPrice').value);
+            const engineeringCost = parseFloat(document.getElementById('engineeringCost').value);
+
+            if (!annualHours || !electricityPrice || !engineeringCost) {
+                alert('請填入所有參數');
+                return;
+            }
+
+            let totalCurrentCost = 0;
+            let totalNewCost = 0;
+            let totalTons = 0;
+            let totalInvestment = 0;
+            let details = [];
+
+            chillers.forEach((chiller, index) => {
+                const tons = parseFloat(chiller.tons);
+                const currentEff = parseFloat(chiller.currentEfficiency);
+                const newEff = parseFloat(chiller.newEfficiency);
+                const hours = useCommonHours ? annualHours : parseFloat(chiller.operatingHours);
+                const loadFactor = parseFloat(chiller.loadFactor) / 100;
+
+                // 現況年耗電 = 冷凍噸 × 年運轉時數 × 負載率 × 現況效率(kW/RT)
+                const currentPower = tons * hours * loadFactor * currentEff;
+                const currentCost = currentPower * electricityPrice;
+
+                // 改善後年耗電 = 冷凍噸 × 年運轉時數 × 負載率 × 新效率(kW/RT)
+                const newPower = tons * hours * loadFactor * newEff;
+                const newCost = newPower * electricityPrice;
+
+                const yearSaving = currentCost - newCost;
+                const investment = tons * engineeringCost;
+
+                totalCurrentCost += currentCost;
+                totalNewCost += newCost;
+                totalTons += tons;
+                totalInvestment += investment;
+
+                details.push({
+                    name: chiller.name,
+                    tons: tons,
+                    currentCost: currentCost,
+                    newCost: newCost,
+                    yearSaving: yearSaving,
+                    investment: investment
+                });
+            });
+
+            const annualSaving = totalCurrentCost - totalNewCost;
+            const paybackYears = totalInvestment > 0 ? totalInvestment / annualSaving : 0;
+
+            lastCalculationResults = {
+                details: details,
+                totalTons: totalTons,
+                totalCurrentCost: totalCurrentCost,
+                totalNewCost: totalNewCost,
+                annualSaving: annualSaving,
+                totalInvestment: totalInvestment,
+                paybackYears: paybackYears,
+                totalCurrentPower: totalCurrentCost / electricityPrice,
+                totalNewPower: totalNewCost / electricityPrice
+            };
+
+            displayResults();
+            generateCharts();
+            showExportButtons();
+        }
+
+        function displayResults() {
+            const r = lastCalculationResults;
+            const container = document.getElementById('resultsContainer');
+
+            const paybackColor = r.paybackYears <= 5 ? 'highlight' : '';
+
+            container.innerHTML = `
+                <div class="card">
+                    <h2>📈 效益分析結果</h2>
+
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-label">現況年耗電</div>
+                            <div class="stat-value">${(r.totalCurrentPower / 1000).toFixed(0)}</div>
+                            <div class="stat-unit">千度</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">改善後年耗電</div>
+                            <div class="stat-value">${(r.totalNewPower / 1000).toFixed(0)}</div>
+                            <div class="stat-unit">千度</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">年度節省電費</div>
+                            <div class="stat-value">${formatCurrency(r.annualSaving)}</div>
+                            <div class="stat-unit">元</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">投資成本</div>
+                            <div class="stat-value">${formatCurrency(r.totalInvestment)}</div>
+                            <div class="stat-unit">元</div>
+                        </div>
+                    </div>
+
+                    <div class="result-card">
+                        <div class="result-row">
+                            <span class="result-label">現況年電費成本</span>
+                            <span class="result-value">${formatCurrency(r.totalCurrentCost)}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">改善後年電費成本</span>
+                            <span class="result-value">${formatCurrency(r.totalNewCost)}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">年度節省電費</span>
+                            <span class="result-value" style="color: #ef4444;">-${formatCurrency(r.annualSaving)}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">預估工程投資</span>
+                            <span class="result-value">${formatCurrency(r.totalInvestment)}</span>
+                        </div>
+                        <div class="result-row" style="border-bottom: 2px solid rgba(0,0,0,0.1); margin-bottom: 10px; padding-bottom: 10px;">
+                            <span class="result-label" style="font-weight: 700;">⭐ 投資回收年限</span>
+                            <span class="result-value ${paybackColor}">${r.paybackYears.toFixed(2)} 年</span>
+                        </div>
+                    </div>
+
+                    ${r.paybackYears <= 5 ? '<div class="warning-banner">✅ 回收年限不超過5年，投資效益良好</div>' : '<div class="warning-banner">⚠️ 回收年限超過5年，建議重新評估方案</div>'}
+                </div>
+            `;
+        }
+
+        function generateCharts() {
+            const r = lastCalculationResults;
+            const container = document.getElementById('chartsContainer');
+
+            // 圖表1：冰機對比圖
+            const trace1Before = {
+                x: r.details.map(d => d.name),
+                y: r.details.map(d => d.currentCost),
+                name: '改造前年電費',
+                marker: { color: '#ef4444' },
+                type: 'bar'
+            };
+
+            const trace1After = {
+                x: r.details.map(d => d.name),
+                y: r.details.map(d => d.newCost),
+                name: '改造後年電費',
+                marker: { color: '#22c55e' },
+                type: 'bar'
+            };
+
+            const layout1 = {
+                title: '各冰機改造前後年度電費對比',
+                barmode: 'group',
+                yaxis: { title: '年度電費 (元)' },
+                xaxis: { title: '冰機編號' },
+                hovermode: 'x unified',
+                margin: { b: 100 }
+            };
+
+            // 圖表2：年耗電度數對比
+            const trace2Before = {
+                x: r.details.map(d => d.name),
+                y: r.details.map(d => d.currentCost / (parseFloat(document.getElementById('electricityPrice').value))),
+                name: '改造前年耗電',
+                marker: { color: '#f59e0b' },
+                type: 'bar'
+            };
+
+            const trace2After = {
+                x: r.details.map(d => d.name),
+                y: r.details.map(d => d.newCost / (parseFloat(document.getElementById('electricityPrice').value))),
+                name: '改造後年耗電',
+                marker: { color: '#3b82f6' },
+                type: 'bar'
+            };
+
+            const layout2 = {
+                title: '各冰機改造前後年度耗電度數對比',
+                barmode: 'group',
+                yaxis: { title: '年耗電量 (kWh)' },
+                xaxis: { title: '冰機編號' },
+                hovermode: 'x unified',
+                margin: { b: 100 }
+            };
+
+            // 圖表3：投資回收曲線
+            const years = Array.from({length: Math.ceil(r.paybackYears) + 3}, (_, i) => i);
+            const cumulativeSavings = years.map(y => y * r.annualSaving);
+            const investmentLine = Array(years.length).fill(r.totalInvestment);
+
+            const trace3Savings = {
+                x: years,
+                y: cumulativeSavings,
+                name: '累計節省電費',
+                line: { color: '#22c55e', width: 3 },
+                fill: 'tozeroy',
+                fillcolor: 'rgba(34, 197, 94, 0.1)'
+            };
+
+            const trace3Investment = {
+                x: years,
+                y: investmentLine,
+                name: '投資成本',
+                line: { color: '#ef4444', width: 2, dash: 'dash' }
+            };
+
+            const layout3 = {
+                title: '投資回收曲線',
+                yaxis: { title: '金額 (元)' },
+                xaxis: { title: '年數' },
+                hovermode: 'x unified',
+                annotations: [{
+                    x: r.paybackYears,
+                    y: r.totalInvestment,
+                    text: `回收點: ${r.paybackYears.toFixed(2)}年`,
+                    showarrow: true,
+                    arrowhead: 2,
+                    arrowsize: 1,
+                    arrowwidth: 2,
+                    arrowcolor: '#2180a0',
+                    ax: 40,
+                    ay: -40
+                }]
+            };
+
+            container.innerHTML = `
+                <div class="chart-container">
+                    <div id="chart1"></div>
+                </div>
+                <div class="chart-container">
+                    <div id="chart2"></div>
+                </div>
+                <div class="chart-container">
+                    <div id="chart3"></div>
+                </div>
+            `;
+
+            Plotly.newPlot('chart1', [trace1Before, trace1After], layout1, { responsive: true });
+            Plotly.newPlot('chart2', [trace2Before, trace2After], layout2, { responsive: true });
+            Plotly.newPlot('chart3', [trace3Savings, trace3Investment], layout3, { responsive: true });
+        }
+
+        function showExportButtons() {
+            const container = document.getElementById('exportButtons');
+            container.innerHTML = `
+                <button class="btn btn-primary" onclick="exportToPDF()">📄 下載PDF報告</button>
+                <button class="btn btn-secondary" onclick="exportToCSV()">📊 下載CSV數據</button>
+                <button class="btn btn-secondary" onclick="printPage()">🖨️ 列印</button>
+            `;
+        }
+
+        function exportToPDF() {
+            const element = document.querySelector('.container');
+            const opt = {
+                margin: 10,
+                filename: '冰水主機更換效益評估報告.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+            html2pdf().set(opt).save().html(element);
+        }
+
+        function exportToCSV() {
+            const r = lastCalculationResults;
+            let csv = '冰水主機更換效益評估 - 詳細數據\n\n';
+            csv += '冰機名稱,冷凍噸數,現況年電費,改造後年電費,年度節省,工程投資\n';
+
+            r.details.forEach(d => {
+                csv += `${d.name},${d.tons},${d.currentCost.toFixed(0)},${d.newCost.toFixed(0)},${d.yearSaving.toFixed(0)},${d.investment.toFixed(0)}\n`;
+            });
+
+            csv += `\n合計,${r.totalTons},${r.totalCurrentCost.toFixed(0)},${r.totalNewCost.toFixed(0)},${r.annualSaving.toFixed(0)},${r.totalInvestment.toFixed(0)}\n`;
+            csv += `\n投資回收年限,,,,${r.paybackYears.toFixed(2)},年\n`;
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '冰水主機評估數據.csv';
+            link.click();
+        }
+
+        function printPage() {
+            window.print();
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('zh-TW', {
+                style: 'currency',
+                currency: 'TWD',
+                minimumFractionDigits: 0
+            }).format(value);
+        }
+
+        // 初始化
+        window.onload = function() {
+            addChiller();
+            // 同步 checkbox 狀態變化
+            document.getElementById('useCommonHours').addEventListener('change', function() {
+                if (this.checked) {
+                    updateCommonHours();
+                }
+                renderChillers();
+            });
+        };
+    </script>
+</body>
+</html>
